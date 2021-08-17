@@ -12,7 +12,7 @@ class HomePage(BasePage):
     def log_out(self):
         """Clicks on Log Out button"""
 
-        self.__log_out_button = self.find_element_by_xpath(HomePageConstants.LOG_OUT_BUTTON_XPATH, 3)
+        self.__log_out_button = self.element(HomePageConstants.LOG_OUT_BUTTON_XPATH, 3)
         self.__log_out_button.click()
 
     def verify_page(self) -> bool:

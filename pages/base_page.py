@@ -12,8 +12,8 @@ class BasePage:
     def __init__(self, driver: WebDriver):
         self.driver = driver
 
-    def find_element_by_xpath(self, xpath: str, timeout=0) -> WebElement:
-        """Returns element after searching with timeout"""
+    def element(self, xpath: str, timeout=0) -> WebElement:
+        """Returns element after searching by xpath with timeout"""
 
         return WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
 
@@ -21,7 +21,7 @@ class BasePage:
         """Returns True if can find element in timeout"""
 
         try:
-            self.find_element_by_xpath(xpath, timeout)
+            self.element(xpath, timeout)
             return True
         except TimeoutException:
             return False
