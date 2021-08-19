@@ -1,33 +1,21 @@
-""""""
-import time
+"""Tests for QA Complex App"""
 
 import pytest
-from conftest import BaseTest
 
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.chrome.webdriver import WebDriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
+from conftest import BaseTest
+from constants.base import BaseConstants
+from constants.login_page import LoginPageConstants as LPConst
+from pages.login_page import LoginPage
+from pages.home_page import HomePage
 
 
 class TestLoginPage(BaseTest):
-    LOGIN_PAGE_URL = "https://qa-complex-app-for-testing.herokuapp.com/"
-    BASE_USER_DATA = {"username": "user", "email": ("user", "@example.com"), "password": "Password"}
-    REGISTERED_USER_DATA = {"username": "user333", "email": "user333@example.com", "password": "369369369369"}
-
-    @pytest.fixture(scope="class")
-    def driver(self):
-        driver = webdriver.Chrome(r'C:\Users\DrLunu\PycharmProjects\QALight\drivers\chromedriver.exe')
-        yield driver
-        driver.close()
 
     @pytest.fixture(scope="function", autouse=True)
     def new_browser_session_setup(self, driver):
         """Opens start page at the beginning and clears cookie files after test"""
 
-        driver.get(self.LOGIN_PAGE_URL)
+        driver.get(BaseConstants.START_PAGE_URL)
         self.log.info("Open page")
         yield
         driver.delete_all_cookies()
@@ -36,314 +24,167 @@ class TestLoginPage(BaseTest):
     def new_user_data(self):
         """Constructs field value's for new unique user"""
 
-        rand_username = f'{self.BASE_USER_DATA["username"]}{self.rand_part}'
-        rand_email = f'{self.BASE_USER_DATA["email"][0]}{self.rand_part}{self.BASE_USER_DATA["email"][1]}'
-        rand_password = f'{self.BASE_USER_DATA["password"]}{self.rand_part}'
+        rand_username = f'{LPConst.BASE_USER_DATA["username"]}{self.rand_part}'
+        rand_email = f'{LPConst.BASE_USER_DATA["email"][0]}{self.rand_part}{LPConst.BASE_USER_DATA["email"][1]}'
+        rand_password = f'{LPConst.BASE_USER_DATA["password"]}{self.rand_part}'
         yield {"username": rand_username, "email": rand_email, "password": rand_password}
 
-    def test_empty_fields_login(self, driver):
+    @pytest.fixture(scope="function")
+    def login(self, driver, login_page):
+        """Goes to Home Page"""
+
+        login_page.login(LPConst.REGISTERED_USER_DATA["username"], LPConst.REGISTERED_USER_DATA["password"])
+        self.log.info("Log In with registered user's data")
+
+    @pytest.fixture(scope="function")
+    def login_page(self, driver):
+        """Returns Login Page object"""
+
+        yield LoginPage(driver)
+
+    @pytest.fixture(scope="function")
+    def home_page(self, driver):
+        """Returns Home Page object"""
+
+        yield HomePage(driver)
+
+    def test_empty_fields_login(self, driver, login_page):
         """
-        - Clear password and login fields
-        - Click on Sign In button
+        - Login with cleared fields
         - Verify error message
         """
 
-        username = driver.find_element_by_xpath('.//input[@placeholder="Username"]')
-        username.clear()
-        password = driver.find_element_by_xpath('.//input[@placeholder="Password"]')
-        password.clear()
-        self.log.info("Fields were cleared")
+        login_page.login()
+        self.log.info("Login with cleared fields")
 
-        sign_in_button = driver.find_element_by_xpath('.//form[@action="/login"]//button')
-        sign_in_button.click()
-        self.log.info("Click on button")
-
-        message = driver.find_element_by_xpath('.//div[contains(text(),"Invalid username / password")]')
-        assert message.text == "Invalid username / password"
+        assert login_page.verify_message(LPConst.INVALID_LOGIN_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-    def test_invalid_fields_login(self, driver):
+    def test_invalid_fields_login(self, driver, login_page):
         """
-        - Clear password and login fields
-        - Fill cleared fields with invalid values
-        - Click on Sign In button
+        - Login with invalid field values
         - Verify error message
         """
 
-        username = driver.find_element_by_xpath('.//input[@placeholder="Username"]')
-        username.clear()
-        password = driver.find_element_by_xpath('.//input[@placeholder="Password"]')
-        password.clear()
-        self.log.info("Fields were cleared")
+        login_page.login(LPConst.INVALID_USERNAME, LPConst.SHORT_PASSWORD)
+        self.log.info("Login with invalid field values")
 
-        username.send_keys("qwertyuio")
-        password.send_keys("1234")
-        self.log.info("Fields were filled with invalid values")
-
-        sign_in_button = driver.find_element_by_xpath('.//form[@action="/login"]//button')
-        sign_in_button.click()
-        self.log.info("Click on button")
-
-        massage = driver.find_element_by_xpath('.//div[contains(text(),"Invalid username / password")]')
-        assert massage.text == "Invalid username / password"
+        assert login_page.verify_message(LPConst.INVALID_LOGIN_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-    def test_successful_login(self, driver):
+    def test_successful_login(self, driver, login, home_page):
         """
-        - Clear password and login fields
-        - Fill fields with registered user's data
-        - Click on Sign In button
+        - Sign In with registered user's data
         - Verify Sign In
         """
 
-        username = driver.find_element_by_xpath('.//input[@placeholder="Username"]')
-        username.clear()
-        password = driver.find_element_by_xpath('.//input[@placeholder="Password"]')
-        password.clear()
-        self.log.info("Fields were cleared")
-
-        username.send_keys(self.REGISTERED_USER_DATA["username"])
-        password.send_keys(self.REGISTERED_USER_DATA["password"])
-        self.log.info("Fields were filled with registered user's data")
-
-        sign_in_button = driver.find_element_by_xpath('.//form[@action="/login"]//button')
-        sign_in_button.click()
-        self.log.info("Click on Sign In button")
-
-        assert is_it_homepage(driver)
+        assert home_page.verify_page()
         self.log.info("Successful login")
 
-    def test_logout(self, driver):
+    def test_logout(self, driver, login, home_page, login_page):
         """
         - Sign In
-        - Click on Sign Out button
-        - Check page
+        - Sign Out
+        - Verify Sign Out
         """
 
-        username = driver.find_element_by_xpath('.//input[@placeholder="Username"]')
-        username.clear()
-        password = driver.find_element_by_xpath('.//input[@placeholder="Password"]')
-        password.clear()
-
-        username.send_keys(self.REGISTERED_USER_DATA["username"])
-        password.send_keys(self.REGISTERED_USER_DATA["password"])
-
-        sign_in_button = driver.find_element_by_xpath('.//form[@action="/login"]//button')
-        sign_in_button.click()
-        assert is_it_homepage(driver)
-        self.log.info("Successful login")
-
-        sign_out_button = driver.find_element_by_xpath('.//form[@action="/logout"]//button')
-        sign_out_button.click()
-        assert is_it_startpage(driver)
+        home_page.log_out()
+        assert login_page.verify_page()
         self.log.info("Successful logout")
 
-    def test_signup_empty_fields(self, driver):
+    def test_signup_empty_fields(self, driver, login_page):
         """
-        - Clear fields of registration form
-        - Click on Sign Up button
+        - Sign up with cleared fields
         - Check page
         """
 
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
+        login_page.sign_up()
+        self.log.info("Sign up with cleared fields")
 
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
-
-        assert is_it_startpage(driver)
+        assert login_page.verify_page()
         self.log.info("Remain on start page")
 
-    def test_signup_used_username(self, driver, new_user_data):
+    def test_signup_used_username(self, driver, login_page, new_user_data):
         """
-        - Clear fields of registration form
-        - Fill username with already taken value
-        - Verify error message
-        - Fill email and password with dynamic valid values
-        - Click on Sign Up button
+        - Sign up with taken username
         - Check page
+        - Verify error message
         """
 
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
+        login_page.sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"], new_user_data["password"])
+        self.log.info("Sign up with taken username")
 
-        username.send_keys("user333")
-        assert is_element_exists(driver, './/div[contains(text(),"That username is already taken")]')
+        assert login_page.verify_page()
+        self.log.info("Remain on start page")
+
+        assert login_page.verify_message(LPConst.USERNAME_IS_TAKEN_MESSAGE_TEXT, 2)
         self.log.info("Error message match to expected")
 
-        email.send_keys(new_user_data["email"])
-        password.send_keys(new_user_data["password"])
-        self.log.info("Fields were filled")
-
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
-
-        assert is_it_startpage(driver)
-        self.log.info("Remain on start page")
-
-    def test_signup_invalid_username(self, driver, new_user_data):
+    def test_username_error_messages(self, driver, login_page):
         """
-        - Clear fields of registration form
         - Fill username with too short value
         - Verify error message
         - Fill username with too long value
         - Verify error message
         - Fill username with inappropriate value
         - Verify error message
-        - Fill email and password with dynamic valid values
-        - Click on Sign Up button
-        - Check page
         """
 
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
-
-        username.send_keys("us")
-        assert is_element_exists(driver, './/div[contains(text(),"Username must be at least 3 characters")]')
-        username.clear()
-        username.send_keys("us" * 30)
-        assert is_element_exists(driver, './/div[contains(text(),"Username cannot exceed 30 characters.")]')
-        username.clear()
-        username.send_keys("us@")
-        assert is_element_exists(driver, './/div[contains(text(),"Username can only contain letters and numbers")]')
-        username.clear()
-        self.log.info("Error messages match to expected")
-
-        email.send_keys(new_user_data["email"])
-        password.send_keys(new_user_data["password"])
-        self.log.info("Fields were filled")
-
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
-
-        assert is_it_startpage(driver)
-        self.log.info("Remain on start page")
-
-    def test_signup_invalid_email(self, driver, new_user_data):
-        """
-        - Clear fields of registration form
-        - Fill email with invalid value
-        - Verify error message
-        - Fill username and password with dynamic valid values
-        - Click on Sign Up button
-        - Check page
-        """
-
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
-
-        email.send_keys("get_random_email()")
-        assert is_element_exists(driver, './/div[contains(text(),"You must provide a valid email address")]')
+        login_page.fill_input(login_page.sign_up_username, LPConst.SHORT_USERNAME)
+        self.log.info("Sign up with too short username")
+        assert login_page.verify_message(LPConst.USERNAME_IS_SHORT_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        username.send_keys(new_user_data["username"])
-        password.send_keys(new_user_data["password"])
-        self.log.info("Fields were filled")
-
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
-
-        assert is_it_startpage(driver)
-        self.log.info("Remain on start page")
-
-    def test_signup_invalid_password(self, driver, new_user_data):
-        """
-        - Clear fields of registration form
-        - Fill password with invalid value
-        - Verify error message
-        - Fill username and email with dynamic valid values
-        - Click on Sign Up button
-        - Check page
-        """
-
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
-
-        password.send_keys("123")
-        assert is_element_exists(driver, './/div[contains(text(),"Password must be at least 12 characters")]')
+        login_page.fill_input(login_page.sign_up_username, LPConst.LONG_USERNAME)
+        self.log.info("Sign up with too long username")
+        assert login_page.verify_message(LPConst.USERNAME_IS_LONG_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        username.send_keys(new_user_data["username"])
-        email.send_keys(new_user_data["email"])
-        self.log.info("Fields were filled")
+        login_page.fill_input(login_page.sign_up_username, LPConst.INVALID_USERNAME)
+        self.log.info("Sign up with invalid username")
+        assert login_page.verify_message(LPConst.USERNAME_IS_INVALID_MESSAGE_TEXT, 3)
+        self.log.info("Error message match to expected")
 
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
+    def test_signup_invalid_email(self, driver, login_page, new_user_data):
+        """
+        - Sign up with invalid email
+        - Check page
+        - Verify error message
+        """
 
-        assert is_it_startpage(driver)
+        login_page.sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
+        self.log.info("Sign up with invalid email")
+
+        assert login_page.verify_page()
         self.log.info("Remain on start page")
 
-    def test_successful_signup(self, driver, new_user_data):
+        assert login_page.verify_message(LPConst.EMAIL_IS_INVALID_MESSAGE_TEXT, 2)
+        self.log.info("Error message match to expected")
+
+    def test_signup_invalid_password(self, driver, login_page, new_user_data):
         """
-        - Clear fields of registration form
-        - Fill fields with dynamic valid values
-        - Click on Sign Up button
-        - Verify successful registration
+        - Sign up with invalid password
+        - Check page
+        - Verify error message
         """
 
-        username = driver.find_element_by_xpath('.//input[@id="username-register"]')
-        username.clear()
-        email = driver.find_element_by_xpath('.//input[@id="email-register"]')
-        email.clear()
-        password = driver.find_element_by_xpath('.//input[@id="password-register"]')
-        password.clear()
-        self.log.info("Fields were cleared")
+        login_page.sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
+        self.log.info("Sign up with invalid email")
 
-        username.send_keys(new_user_data["username"])
-        email.send_keys(new_user_data["email"])
-        password.send_keys(new_user_data["password"])
-        self.log.info("Fields were filled with dynamic valid values")
+        assert login_page.verify_page()
+        self.log.info("Remain on start page")
 
-        sign_up_button = driver.find_element_by_xpath('.//form[@id="registration-form"]//button[@type="submit"]')
-        time.sleep(1)
-        sign_up_button.click()
-        self.log.info("Click on Sign Up button")
+        assert login_page.verify_message(LPConst.PASSWORD_IS_SHORT_MESSAGE_TEXT, 2)
+        self.log.info("Error message match to expected")
 
-        assert is_it_homepage(driver)
-        self.log.info("Successful registration")
+    def test_successful_signup(self, driver, login_page, new_user_data, home_page):
+        """
+        - Sign Up with valid data
+        - Verify Sign Up
+        """
 
+        login_page.sign_up(new_user_data["username"], new_user_data["email"], new_user_data["password"])
+        self.log.info("Sign up with invalid email")
 
-def is_it_homepage(driver: WebDriver) -> bool:
-    return is_element_exists(driver, './/form[@action="/logout"]//button')
-
-
-def is_it_startpage(driver: WebDriver) -> bool:
-    return is_element_exists(driver, './/form[@action="/login"]//button')
-
-
-def is_element_exists(driver: WebDriver, xpath: str) -> bool:
-    try:
-        WebDriverWait(driver, 3).until(ec.presence_of_element_located((By.XPATH, xpath)))
-        return True
-    except TimeoutException:
-        return False
+        assert home_page.verify_page()
+        self.log.info("Successful Sign Up")
