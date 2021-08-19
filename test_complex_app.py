@@ -98,7 +98,7 @@ class TestLoginPage(BaseTest):
         - Check page
         """
 
-        login_page.sign_up()
+        login_page.try_to_sign_up()
         self.log.info("Sign up with cleared fields")
 
         assert login_page.verify_page()
@@ -111,7 +111,8 @@ class TestLoginPage(BaseTest):
         - Verify error message
         """
 
-        login_page.sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"], new_user_data["password"])
+        login_page.try_to_sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"],
+                                  new_user_data["password"])
         self.log.info("Sign up with taken username")
 
         assert login_page.verify_page()
@@ -130,17 +131,17 @@ class TestLoginPage(BaseTest):
         - Verify error message
         """
 
-        login_page.fill_input(login_page.sign_up_username, LPConst.SHORT_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.SHORT_USERNAME)
         self.log.info("Sign up with too short username")
         assert login_page.verify_message(LPConst.USERNAME_IS_SHORT_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        login_page.fill_input(login_page.sign_up_username, LPConst.LONG_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.LONG_USERNAME)
         self.log.info("Sign up with too long username")
         assert login_page.verify_message(LPConst.USERNAME_IS_LONG_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        login_page.fill_input(login_page.sign_up_username, LPConst.INVALID_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.INVALID_USERNAME)
         self.log.info("Sign up with invalid username")
         assert login_page.verify_message(LPConst.USERNAME_IS_INVALID_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
@@ -152,7 +153,7 @@ class TestLoginPage(BaseTest):
         - Verify error message
         """
 
-        login_page.sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
+        login_page.try_to_sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
         self.log.info("Sign up with invalid email")
 
         assert login_page.verify_page()
@@ -168,7 +169,7 @@ class TestLoginPage(BaseTest):
         - Verify error message
         """
 
-        login_page.sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
+        login_page.try_to_sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
         self.log.info("Sign up with invalid email")
 
         assert login_page.verify_page()
