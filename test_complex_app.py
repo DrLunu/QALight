@@ -14,7 +14,6 @@ class TestLoginPage(BaseTest):
     @pytest.fixture(scope="function", autouse=True)
     def new_browser_session_setup(self, driver):
         """Opens start page at the beginning and clears cookie files after test"""
-
         driver.get(BaseConstants.START_PAGE_URL)
         self.log.info("Open page")
         yield
@@ -23,7 +22,6 @@ class TestLoginPage(BaseTest):
     @pytest.fixture(scope="function")
     def new_user_data(self):
         """Constructs field value's for new unique user"""
-
         rand_username = f'{LPConst.BASE_USER_DATA["username"]}{self.rand_part}'
         rand_email = f'{LPConst.BASE_USER_DATA["email"][0]}{self.rand_part}{LPConst.BASE_USER_DATA["email"][1]}'
         rand_password = f'{LPConst.BASE_USER_DATA["password"]}{self.rand_part}'
@@ -32,20 +30,17 @@ class TestLoginPage(BaseTest):
     @pytest.fixture(scope="function")
     def login(self, driver, login_page):
         """Goes to Home Page"""
-
         login_page.login(LPConst.REGISTERED_USER_DATA["username"], LPConst.REGISTERED_USER_DATA["password"])
         self.log.info("Log In with registered user's data")
 
     @pytest.fixture(scope="function")
     def login_page(self, driver):
         """Returns Login Page object"""
-
         yield LoginPage(driver)
 
     @pytest.fixture(scope="function")
     def home_page(self, driver):
         """Returns Home Page object"""
-
         yield HomePage(driver)
 
     def test_empty_fields_login(self, driver, login_page):
@@ -53,7 +48,6 @@ class TestLoginPage(BaseTest):
         - Login with cleared fields
         - Verify error message
         """
-
         login_page.login()
         self.log.info("Login with cleared fields")
 
@@ -65,7 +59,6 @@ class TestLoginPage(BaseTest):
         - Login with invalid field values
         - Verify error message
         """
-
         login_page.login(LPConst.INVALID_USERNAME, LPConst.SHORT_PASSWORD)
         self.log.info("Login with invalid field values")
 
@@ -77,7 +70,6 @@ class TestLoginPage(BaseTest):
         - Sign In with registered user's data
         - Verify Sign In
         """
-
         assert home_page.verify_page()
         self.log.info("Successful login")
 
@@ -87,7 +79,6 @@ class TestLoginPage(BaseTest):
         - Sign Out
         - Verify Sign Out
         """
-
         home_page.log_out()
         assert login_page.verify_page()
         self.log.info("Successful logout")
@@ -97,8 +88,7 @@ class TestLoginPage(BaseTest):
         - Sign up with cleared fields
         - Check page
         """
-
-        login_page.sign_up()
+        login_page.try_to_sign_up()
         self.log.info("Sign up with cleared fields")
 
         assert login_page.verify_page()
@@ -110,8 +100,8 @@ class TestLoginPage(BaseTest):
         - Check page
         - Verify error message
         """
-
-        login_page.sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"], new_user_data["password"])
+        login_page.try_to_sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"],
+                                  new_user_data["password"])
         self.log.info("Sign up with taken username")
 
         assert login_page.verify_page()
@@ -129,18 +119,17 @@ class TestLoginPage(BaseTest):
         - Fill username with inappropriate value
         - Verify error message
         """
-
-        login_page.fill_input(login_page.sign_up_username, LPConst.SHORT_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.SHORT_USERNAME)
         self.log.info("Sign up with too short username")
         assert login_page.verify_message(LPConst.USERNAME_IS_SHORT_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        login_page.fill_input(login_page.sign_up_username, LPConst.LONG_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.LONG_USERNAME)
         self.log.info("Sign up with too long username")
         assert login_page.verify_message(LPConst.USERNAME_IS_LONG_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-        login_page.fill_input(login_page.sign_up_username, LPConst.INVALID_USERNAME)
+        login_page.fill_input(login_page.sign_up_username_input, LPConst.INVALID_USERNAME)
         self.log.info("Sign up with invalid username")
         assert login_page.verify_message(LPConst.USERNAME_IS_INVALID_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
@@ -151,8 +140,7 @@ class TestLoginPage(BaseTest):
         - Check page
         - Verify error message
         """
-
-        login_page.sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
+        login_page.try_to_sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
         self.log.info("Sign up with invalid email")
 
         assert login_page.verify_page()
@@ -167,8 +155,7 @@ class TestLoginPage(BaseTest):
         - Check page
         - Verify error message
         """
-
-        login_page.sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
+        login_page.try_to_sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
         self.log.info("Sign up with invalid email")
 
         assert login_page.verify_page()
@@ -182,7 +169,6 @@ class TestLoginPage(BaseTest):
         - Sign Up with valid data
         - Verify Sign Up
         """
-
         login_page.sign_up(new_user_data["username"], new_user_data["email"], new_user_data["password"])
         self.log.info("Sign up with invalid email")
 
