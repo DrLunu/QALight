@@ -5,14 +5,10 @@ from pages.base_page import BasePage
 class HomePage(BasePage):
     """Representation of Home Page"""
 
-    # Elements
-
     def log_out(self):
         """Clicks on Log Out button"""
-
         self.element(HomePageConstants.LOG_OUT_BUTTON_XPATH, 3).click()
 
     def verify_page(self, timeout=3) -> bool:
         """Returns True if current page is Home Page"""
-
-        return self.verify_element_presence(HomePageConstants.LOG_OUT_BUTTON_XPATH, timeout)
+        return self.is_element_presence(HomePageConstants.LOG_OUT_BUTTON_XPATH, timeout)

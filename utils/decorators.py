@@ -5,6 +5,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 
 
 def retry_till_success(timeout=5, period=0.25):
+    """Trying to execute target function for timeout with period."""
     def act_decorator(target_func):
         logger = logging.getLogger(__name__)
 
