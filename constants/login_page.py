@@ -23,8 +23,9 @@ class LoginPageConstants:
     PASSWORD_IS_SHORT_MESSAGE_TEXT = "Password must be at least 12 characters."
 
     # User data
-    BASE_USER_DATA = {"username": "user", "email": ("user", "@example.com"), "password": "Password"}
-    REGISTERED_USER_DATA = {"username": "user333", "email": "user333@example.com", "password": "369369369369"}
+    REGISTERED_USERNAME = "user333"
+    REGISTERED_EMAIL = "user333@example.com"
+    REGISTERED_PASSWORD = "369369369369"
     INVALID_USERNAME = "qwertyu?io"
     INVALID_EMAIL = "qwerty"
     SHORT_PASSWORD = "1234"

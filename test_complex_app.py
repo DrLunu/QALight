@@ -5,45 +5,38 @@ import pytest
 from conftest import BaseTest
 from constants.base import BaseConstants
 from constants.login_page import LoginPageConstants as LPConst
-from pages.login_page import LoginPage
-from pages.home_page import HomePage
+from entities.user import User
+from pages.login_page import LoginPage, SignUpConfig
 
 
 class TestLoginPage(BaseTest):
 
-    @pytest.fixture(scope="function", autouse=True)
-    def new_browser_session_setup(self, driver):
-        """Opens start page at the beginning and clears cookie files after test"""
-        driver.get(BaseConstants.START_PAGE_URL)
-        self.log.info("Open page")
-        yield
-        driver.delete_all_cookies()
+    @pytest.fixture(scope="function")
+    def new_user(self):
+        """Returns new unique user"""
+        user = User.randomize(self.rand_part)
+        yield user
 
     @pytest.fixture(scope="function")
-    def new_user_data(self):
-        """Constructs field value's for new unique user"""
-        rand_username = f'{LPConst.BASE_USER_DATA["username"]}{self.rand_part}'
-        rand_email = f'{LPConst.BASE_USER_DATA["email"][0]}{self.rand_part}{LPConst.BASE_USER_DATA["email"][1]}'
-        rand_password = f'{LPConst.BASE_USER_DATA["password"]}{self.rand_part}'
-        yield {"username": rand_username, "email": rand_email, "password": rand_password}
-
-    @pytest.fixture(scope="function")
-    def login(self, driver, login_page):
-        """Goes to Home Page"""
-        login_page.login(LPConst.REGISTERED_USER_DATA["username"], LPConst.REGISTERED_USER_DATA["password"])
-        self.log.info("Log In with registered user's data")
+    def registered_user(self):
+        """Returns registered user"""
+        yield User(LPConst.REGISTERED_USERNAME, LPConst.REGISTERED_EMAIL, LPConst.REGISTERED_PASSWORD)
 
     @pytest.fixture(scope="function")
     def login_page(self, driver):
-        """Returns Login Page object"""
+        """Opens start page at the beginning, returns Login Page object and clears cookie files after test"""
+        driver.get(BaseConstants.START_PAGE_URL)
         yield LoginPage(driver)
+        driver.delete_all_cookies()
 
     @pytest.fixture(scope="function")
-    def home_page(self, driver):
-        """Returns Home Page object"""
-        yield HomePage(driver)
+    def home_page(self, login_page, registered_user):
+        """Returns Home Page"""
+        home_page = login_page.login(registered_user)
+        self.log.info("Log In with registered user's data")
+        yield home_page
 
-    def test_empty_fields_login(self, driver, login_page):
+    def test_empty_fields_login(self, login_page):
         """
         - Login with cleared fields
         - Verify error message
@@ -54,18 +47,18 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_message(LPConst.INVALID_LOGIN_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-    def test_invalid_fields_login(self, driver, login_page):
+    def test_invalid_fields_login(self, login_page):
         """
         - Login with invalid field values
         - Verify error message
         """
-        login_page.login(LPConst.INVALID_USERNAME, LPConst.SHORT_PASSWORD)
+        login_page.login(User())
         self.log.info("Login with invalid field values")
 
         assert login_page.verify_message(LPConst.INVALID_LOGIN_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-    def test_successful_login(self, driver, login, home_page):
+    def test_successful_login(self, home_page):
         """
         - Sign In with registered user's data
         - Verify Sign In
@@ -73,7 +66,7 @@ class TestLoginPage(BaseTest):
         assert home_page.verify_page()
         self.log.info("Successful login")
 
-    def test_logout(self, driver, login, home_page, login_page):
+    def test_logout(self, home_page, login_page):
         """
         - Sign In
         - Sign Out
@@ -83,25 +76,25 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_page()
         self.log.info("Successful logout")
 
-    def test_signup_empty_fields(self, driver, login_page):
+    def test_signup_empty_fields(self, login_page):
         """
         - Sign up with cleared fields
         - Check page
         """
-        login_page.try_to_sign_up()
+        login_page.sign_up()
         self.log.info("Sign up with cleared fields")
 
         assert login_page.verify_page()
         self.log.info("Remain on start page")
 
-    def test_signup_used_username(self, driver, login_page, new_user_data):
+    def test_signup_used_username(self, login_page, new_user, registered_user):
         """
         - Sign up with taken username
         - Check page
         - Verify error message
         """
-        login_page.try_to_sign_up(LPConst.REGISTERED_USER_DATA["username"], new_user_data["email"],
-                                  new_user_data["password"])
+        new_user.username = registered_user.username
+        login_page.sign_up(new_user)
         self.log.info("Sign up with taken username")
 
         assert login_page.verify_page()
@@ -110,7 +103,7 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_message(LPConst.USERNAME_IS_TAKEN_MESSAGE_TEXT, 2)
         self.log.info("Error message match to expected")
 
-    def test_username_error_messages(self, driver, login_page):
+    def test_username_error_messages(self, login_page):
         """
         - Fill username with too short value
         - Verify error message
@@ -134,13 +127,14 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_message(LPConst.USERNAME_IS_INVALID_MESSAGE_TEXT, 3)
         self.log.info("Error message match to expected")
 
-    def test_signup_invalid_email(self, driver, login_page, new_user_data):
+    def test_signup_invalid_email(self, login_page, new_user):
         """
         - Sign up with invalid email
         - Check page
         - Verify error message
         """
-        login_page.try_to_sign_up(new_user_data["username"], LPConst.INVALID_EMAIL, new_user_data["password"])
+        new_user.email = LPConst.INVALID_EMAIL
+        login_page.sign_up(new_user)
         self.log.info("Sign up with invalid email")
 
         assert login_page.verify_page()
@@ -149,14 +143,15 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_message(LPConst.EMAIL_IS_INVALID_MESSAGE_TEXT, 2)
         self.log.info("Error message match to expected")
 
-    def test_signup_invalid_password(self, driver, login_page, new_user_data):
+    def test_signup_invalid_password(self, login_page, new_user):
         """
         - Sign up with invalid password
         - Check page
         - Verify error message
         """
-        login_page.try_to_sign_up(new_user_data["username"], new_user_data["email"], LPConst.SHORT_PASSWORD)
-        self.log.info("Sign up with invalid email")
+        new_user.password = LPConst.SHORT_PASSWORD
+        login_page.sign_up(new_user)
+        self.log.info("Sign up with invalid password")
 
         assert login_page.verify_page()
         self.log.info("Remain on start page")
@@ -164,13 +159,13 @@ class TestLoginPage(BaseTest):
         assert login_page.verify_message(LPConst.PASSWORD_IS_SHORT_MESSAGE_TEXT, 2)
         self.log.info("Error message match to expected")
 
-    def test_successful_signup(self, driver, login_page, new_user_data, home_page):
+    def test_successful_signup(self, login_page, new_user):
         """
         - Sign Up with valid data
         - Verify Sign Up
         """
-        login_page.sign_up(new_user_data["username"], new_user_data["email"], new_user_data["password"])
-        self.log.info("Sign up with invalid email")
+        home_page = login_page.sign_up(new_user, SignUpConfig(is_home_page_expected=True))
+        self.log.info("Sign up with valid data")
 
         assert home_page.verify_page()
         self.log.info("Successful Sign Up")
