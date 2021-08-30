@@ -25,9 +25,9 @@ class BasePage:
         except TimeoutException:
             return False
 
-    def verify_message(self, message: str, timeout=0) -> bool:
+    def verify_message(self, message: str, timeout=0, tag='*') -> bool:
         """Returns True if can find element containing message in timeout"""
-        return self.is_element_presence(f'.//div[contains(text(),"{message}")]', timeout)
+        return self.is_element_presence(f'.//{tag}[contains(text(),"{message}")]', timeout)
 
     def safe_click(self, xpath: str, timeout=5):
         """Wait for element to be clickable and click on it"""

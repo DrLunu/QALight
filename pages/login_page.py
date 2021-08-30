@@ -1,5 +1,5 @@
 import time
-from constants.login_page import LoginPageConstants as LPConst
+from constants.login_page import LoginPageConstants
 from entities.user import User
 from pages.base_page import BasePage
 from pages.home_page import HomePage
@@ -13,28 +13,32 @@ class SignUpConfig:
 class LoginPage(BasePage):
     """Representation of Login Page"""
 
+    def __init__(self, driver):
+        super().__init__(driver)
+        self.constants = LoginPageConstants
+
     @property
     def sign_up_username_input(self):
-        return self.element(LPConst.SIGN_UP_USERNAME_XPATH)
+        return self.element(self.constants.SIGN_UP_USERNAME_XPATH)
 
     def login(self, user=User()):
         """Fills login form, and click Log In button"""
-        log_in_username = self.element(LPConst.LOG_IN_USERNAME_XPATH)
-        log_in_password = self.element(LPConst.LOG_IN_PASSWORD_XPATH)
-        log_in_button = self.element(LPConst.LOG_IN_BUTTON_XPATH)
+        log_in_username = self.element(self.constants.LOG_IN_USERNAME_XPATH)
+        log_in_password = self.element(self.constants.LOG_IN_PASSWORD_XPATH)
+        log_in_button = self.element(self.constants.LOG_IN_BUTTON_XPATH)
 
         self.fill_input(log_in_username, user.username)
         self.fill_input(log_in_password, user.password)
         log_in_button.click()
-        return HomePage(self.driver)
+        return HomePage(self.driver, user)
 
     def sign_up(self, user=User(), config=SignUpConfig(is_home_page_expected=False)):
         """Fills sign up form, click Sign Up button and check page"""
-        sign_up_username = self.element(LPConst.SIGN_UP_USERNAME_XPATH)
-        sign_up_email = self.element(LPConst.SIGN_UP_EMAIL_XPATH)
-        sign_up_password = self.element(LPConst.SIGN_UP_PASSWORD_XPATH)
-        sign_up_button = self.element(LPConst.SIGN_UP_BUTTON_XPATH)
-        home_page = HomePage(self.driver)
+        sign_up_username = self.element(self.constants.SIGN_UP_USERNAME_XPATH)
+        sign_up_email = self.element(self.constants.SIGN_UP_EMAIL_XPATH)
+        sign_up_password = self.element(self.constants.SIGN_UP_PASSWORD_XPATH)
+        sign_up_button = self.element(self.constants.SIGN_UP_BUTTON_XPATH)
+        home_page = HomePage(self.driver, user)
 
         self.fill_input(sign_up_username, user.username)
         self.fill_input(sign_up_email, user.email)
@@ -50,4 +54,4 @@ class LoginPage(BasePage):
 
     def verify_page(self, timeout=3) -> bool:
         """Returns True if current page is Login Page"""
-        return self.is_element_presence(LPConst.LOG_IN_BUTTON_XPATH, timeout)
+        return self.is_element_presence(self.constants.LOG_IN_BUTTON_XPATH, timeout)
