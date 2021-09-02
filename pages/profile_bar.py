@@ -1,4 +1,3 @@
-from entities.user import User
 from pages.base_page import BasePage
 from constants.profile_bar import ProfileBarConstants
 
@@ -6,10 +5,9 @@ from constants.profile_bar import ProfileBarConstants
 class ProfileBar(BasePage):
     """Representation of Profile Bar"""
 
-    def __init__(self, driver, user: User):
+    def __init__(self, driver):
         super().__init__(driver)
         self.constants = ProfileBarConstants
-        self.user = user
 
     def log_out(self):
         """Clicks on Log Out button"""
@@ -19,10 +17,11 @@ class ProfileBar(BasePage):
 
     def go_to_create_post(self):
         self.element(self.constants.CREATE_POST_BUTTON_XPATH).click()
-        from pages.create_post_page import CreatePostPage
-        return CreatePostPage(self.driver)
+        from pages.post_create_page import PostCreatePage
+        return PostCreatePage(self.driver)
 
     def go_to_profile(self):
         """"""
+        self.element(self.constants.MY_PROFILE_BUTTON_XPATH).click()
         from pages.profile_page import ProfilePage
         return ProfilePage(self.driver)

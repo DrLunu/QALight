@@ -10,7 +10,7 @@ class HomePage(BasePage):
     def __init__(self, driver, user: User):
         super().__init__(driver)
         self.constants = HomePageConstants
-        self.profile_bar = ProfileBar(self.driver, user)
+        self.profile_bar = ProfileBar(self.driver)
         self.user = user
 
     def verify_page(self, timeout=3) -> bool:

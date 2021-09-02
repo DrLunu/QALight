@@ -10,25 +10,21 @@ from constants.login_page import LoginPageConstants as LPConst
 
 def pytest_runtest_setup(item):
     item.cls.log = logging.getLogger(item.name)
+    item.cls.rand_part = randint(100000, 999999)
 
 
 class BaseTest:
     log = logging.getLogger(__name__)
+    rand_part = randint(100000, 999999)
 
 
 @pytest.fixture(scope="session")
 def driver():
-    driver = webdriver.Chrome(BaseConstants.DRIVER_PATH)
+    options = webdriver.ChromeOptions()
+    options.add_argument("headless")
+    driver = webdriver.Chrome(executable_path=BaseConstants.DRIVER_PATH, options=options)
     yield driver
     driver.close()
-
-
-@pytest.fixture(scope="function")
-def new_user():
-    """Returns new unique user"""
-    rand_part = randint(100000, 999999)
-    user = User.randomize(rand_part)
-    yield user
 
 
 @pytest.fixture(scope="function")

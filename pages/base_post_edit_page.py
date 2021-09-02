@@ -1,6 +1,6 @@
 from entities.post import Post
 from pages.base_page import BasePage
-from constants.post_edit_page import PostEditConstants
+from constants.post import PostConstants
 from pages.profile_bar import ProfileBar
 
 
@@ -9,7 +9,7 @@ class BasePostEditPage(BasePage):
 
     def __init__(self, driver):
         super().__init__(driver)
-        self.constants = PostEditConstants
+        self.constants = PostConstants
         self.profile_bar = ProfileBar(self.driver)
 
     def fill_post_form(self, post: Post):

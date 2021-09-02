@@ -1,4 +1,7 @@
 """Tests for Login Page of QA Complex App"""
+from random import randint
+
+import pytest
 
 from conftest import BaseTest
 from entities.user import User
@@ -6,6 +9,13 @@ from pages.login_page import SignUpConfig
 
 
 class TestLoginPage(BaseTest):
+
+    @pytest.fixture(scope="function")
+    def new_user(self):
+        """Returns new unique user"""
+        rand_part = randint(100000, 999999)
+        user = User.randomize(rand_part)
+        yield user
 
     def test_empty_fields_login(self, login_page):
         """
